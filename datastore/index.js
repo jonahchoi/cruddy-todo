@@ -21,10 +21,21 @@ exports.create = async (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
-  });
-  callback(null, data);
+  // var data = _.map(items, (text, id) => {
+  //   return { id, text };
+  // });
+  // callback(null, data);
+
+  new Promise((resolve, reject) => {
+    fs.readdir(exports.dataDir, (err, files) => {
+      let returnArr = files.map(file => {
+        let retObj = {id: file, text: file};
+        return retObj;
+      });
+      resolve(returnArr);
+    });
+  }).then((returnArr) => {callback(null, returnArr);});
+
 };
 
 exports.readOne = (id, callback) => {
