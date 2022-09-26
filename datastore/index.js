@@ -39,12 +39,21 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
+  /* var text = items[id];
   if (!text) {
     callback(new Error(`No item with id: ${id}`));
   } else {
     callback(null, { id, text });
-  }
+  } */
+
+  fs.readFile(`${exports.dataDir}/${id}`, (err, data) => {
+    if(err) {
+      callback(err);
+    } else {
+      let retObj = {id: `${id}`, text: `${data}`};
+      callback(null, retObj);
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {
