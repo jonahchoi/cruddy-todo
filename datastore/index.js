@@ -57,13 +57,20 @@ exports.readOne = (id, callback) => {
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
+ /*  var item = items[id];
   if (!item) {
     callback(new Error(`No item with id: ${id}`));
   } else {
     items[id] = text;
     callback(null, { id, text });
-  }
+  } */
+  fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
+    if(err) {
+      throw('error editing old todo');
+    } else {
+      callback(null, { id, text });
+    }
+  })
 };
 
 exports.delete = (id, callback) => {
