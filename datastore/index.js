@@ -7,10 +7,17 @@ var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
-exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
-  items[id] = text;
-  callback(null, { id, text });
+exports.create = async (text, callback) => {
+  var id = await counter.getNextUniqueId();
+  // items[id] = text;
+  console.log(`${exports.dataDir}/${id}`);
+  fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
+    if(err) {
+      throw('error creating/writing new todo')
+    } else {
+      callback(null, { id, text });
+    }
+  })
 };
 
 exports.readAll = (callback) => {

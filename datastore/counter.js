@@ -37,10 +37,15 @@ const writeCounter = (count, callback) => {
 };
 
 // Public API - Fix this function //////////////////////////////////////////////
-
 exports.getNextUniqueId = () => {
-  counter = counter + 1;
-  return zeroPaddedNumber(counter);
+  return new Promise((resolve, reject) => {
+    readCounter((err, num) => {
+      writeCounter(num + 1, (err, id)=>{
+        //return id
+        resolve(id);
+      });
+    })
+  })
 };
 
 
