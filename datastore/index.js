@@ -8,16 +8,21 @@ var items = {};
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = async (text, callback) => {
-  var id = await counter.getNextUniqueId();
+  // var id = await counter.getNextUniqueId();
+  var id;
+  counter.getNextUniqueId((err, idHolder) => {
+    id = idHolder;
+    console.log(`${exports.dataDir}/${id}`);
+    fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
+      if(err) {
+        callback(err);
+      } else {
+        callback(null, { id, text });
+      }
+    })
+  });
   // items[id] = text;
-  console.log(`${exports.dataDir}/${id}`);
-  fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
-    if(err) {
-      callback(err);
-    } else {
-      callback(null, { id, text });
-    }
-  })
+
 };
 
 exports.readAll = (callback) => {
@@ -26,7 +31,7 @@ exports.readAll = (callback) => {
   // });
   // callback(null, data);
 
-  new Promise((resolve, reject) => {
+  /* new Promise((resolve, reject) => {
     fs.readdir(exports.dataDir, (err, files) => {
       let returnArr = files.map(file => {
         let retObj = {id: file, text: file};
@@ -35,8 +40,27 @@ exports.readAll = (callback) => {
       resolve(returnArr);
     });
   }).then((returnArr) => {callback(null, returnArr);})
-    .catch((err) => callback(err));
+    .catch((err) => callback(err)); */
 
+  fs.readdir(exports.dataDir, (err, files) => {
+    Promise.all(files.map(file => {
+      return new Promise((res, rej) => {
+        fs.readFile(`${exports.dataDir}/${file}`, (err, data) => {
+          if(err) {
+            rej(err);
+          } else {
+            let retObj = {id: `${file}`, text: `${data}`};
+            res(retObj);
+          }
+        });
+      })
+
+    }))
+      .then((data) => {
+        console.log(data);
+        callback(null, data)})
+      .catch((err) => callback(err));
+  });
 };
 
 exports.readOne = (id, callback) => {
@@ -83,7 +107,6 @@ exports.delete = (id, callback) => {
   } else {
     callback();
   } */
-
   fs.unlink(`${exports.dataDir}/${id}`, (err) => {
     if (err) {
       callback(err);

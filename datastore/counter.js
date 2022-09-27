@@ -37,14 +37,16 @@ const writeCounter = (count, callback) => {
 };
 
 // Public API - Fix this function //////////////////////////////////////////////
-exports.getNextUniqueId = () => {
-  return new Promise((resolve, reject) => {
-    readCounter((err, num) => {
-      writeCounter(num + 1, (err, id)=>{
-        //return id
-        resolve(id);
-      });
-    })
+exports.getNextUniqueId = (callback) => {
+  readCounter((err, num) => {
+    writeCounter(num + 1, (err, id)=>{
+      if(err) {
+        callback(err);
+      }
+      else {
+        callback(null, id);
+      }
+    });
   })
 };
 
