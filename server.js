@@ -41,13 +41,20 @@ app.get('/todo', (req, res) => {
 
 // Read one (cRud) -- member route
 app.get('/todo/:id', (req, res) => {
-  Todo.readOne(req.params.id, (err, todo) => {
-    if (todo) {
+  Todo.readOne(req.params.id)
+    .then((returnObj) => {
+      res.status(200).json(returnObj);
+    })
+    .catch(() => {
+      res.sendStatus(404);
+    })
+  /*
+  if (todo) {
       res.status(200).json(todo);
     } else {
       res.sendStatus(404);
     }
-  });
+  */
 });
 
 // Update (crUd) -- member route
@@ -60,6 +67,23 @@ app.put('/todo/:id', (req, res) => {
     }
   });
 });
+
+// Switch (crUd)
+app.put('/todo', (req, res) => {
+  Todo.switch(req.body.id , req.body.goingUp, (err, didSwitch) => {
+    if(err) {
+      res.sendStatus(404);
+    } else {
+      Todo.readAll((err, todos) => {
+        if (err) {
+          res.sendStatus(400);
+        } else {
+          res.status(200).json(todos);
+        }
+      });
+    }
+  })
+})
 
 // Delete (cruD) -- member route
 app.delete('/todo/:id', (req, res) => {

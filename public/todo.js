@@ -55,5 +55,15 @@ window.Todo = {
       dataType: 'json',
       success: callback
     });
+  },
+
+  switch: function(id, goingUp, callback) {
+    return $.ajax({
+      url: `${this.url}`,
+      type: 'PUT',
+      dataType: 'json',
+      data: { goingUp, id },
+      success: callback
+    })
   }
 };

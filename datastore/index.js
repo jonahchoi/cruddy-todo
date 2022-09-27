@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+const Bluebird = require('bluebird');
 
 var items = {};
 
@@ -9,7 +10,7 @@ var items = {};
 
 exports.create = (text, callback) => {
 
-  counter.getNextUniqueId((err, id) => {
+  /* counter.getNextUniqueId((err, id) => {
 
     fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
       if(err) {
@@ -18,7 +19,23 @@ exports.create = (text, callback) => {
         callback(null, { id, text });
       }
     })
-  });
+  }); */
+  counter.getNextUniqueId()
+    .then((id) => {
+      let newTask = {
+        text: text,
+        createTime: new Date(),
+        updateTime: null
+      };
+      fs.writeFile(`${exports.dataDir}/${id}.txt`, JSON.stringify(newTask), (err) => {
+        if(err) {
+          callback(err);
+        } else {
+          callback(null, { id, text });
+        }
+      })
+    })
+    .catch((err) => console.error(err));
 };
 
 exports.readAll = (callback) => {
@@ -45,7 +62,8 @@ exports.readAll = (callback) => {
           if(err) {
             rej(err);
           } else {
-            let retObj = {id: `${file}`.split('.')[0], text: `${data}`};
+            let orgObj = JSON.parse(data);
+            let retObj = {id: `${file}`.split('.')[0], text: `${orgObj.text}`};
             res(retObj);
           }
         });
@@ -59,7 +77,7 @@ exports.readAll = (callback) => {
   });
 };
 
-exports.readOne = (id, callback) => {
+exports.readOne = (id) => {
   /* var text = items[id];
   if (!text) {
     callback(new Error(`No item with id: ${id}`));
@@ -67,13 +85,28 @@ exports.readOne = (id, callback) => {
     callback(null, { id, text });
   } */
 
-  fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
+  //Callback Version
+  /* fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
     if(err) {
       callback(err);
     } else {
       let retObj = {id: `${id}`.split('.')[0], text: `${data}`};
       callback(null, retObj);
     }
+  }); */
+
+  //Promise Version
+  return new Promise((res, rej) => {
+    fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
+      if(err) {
+        rej(err);
+      } else {
+        let orgObj = JSON.parse(data);
+        // console.log('org Obj.text', orgObj.text);
+        let retObj = {id: `${id}`.split('.')[0], text: `${orgObj.text}`};
+        res(retObj);
+      }
+    });
   });
 };
 
@@ -89,7 +122,10 @@ exports.update = (id, text, callback) => {
     if(err) {
       callback(err);
     } else {
-      fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
+      let orgObj = JSON.parse(innerText);
+      orgObj.text = text;
+      orgObj.updateTime = new Date();
+      fs.writeFile(`${exports.dataDir}/${id}.txt`, JSON.stringify(orgObj), (err) => {
         if(err) {
           callback(err);
         } else {
@@ -109,6 +145,7 @@ exports.delete = (id, callback) => {
   } else {
     callback();
   } */
+
   fs.unlink(`${exports.dataDir}/${id}.txt`, (err) => {
     if (err) {
       callback(err);
@@ -117,6 +154,28 @@ exports.delete = (id, callback) => {
     }
   });
 };
+
+exports.switch = (id, goingUp, callback) => {
+  let fileToSwitch;
+
+  if(goingUp === 'true') {
+    fileToSwitch = counter.zeroPaddedNumber(Number(id) - 1);
+  } else {
+    fileToSwitch = counter.zeroPaddedNumber(Number(id) + 1);
+  }
+  let readFileAsync = Bluebird.promisify(fs.readFile);
+  let writeFileAsync = Bluebird.promisify(fs.writeFile);
+  Promise.all([readFileAsync(`${exports.dataDir}/${id}.txt`), readFileAsync(`${exports.dataDir}/${fileToSwitch}.txt`)])
+    .then((data) => {
+      let newText = `${data[1]}`;
+      let orgText = `${data[0]}`;
+      return Promise.all([writeFileAsync(`${exports.dataDir}/${id}.txt`, newText), writeFileAsync(`${exports.dataDir}/${fileToSwitch}.txt`, orgText)]);
+    })
+    .then(() => callback(null))
+    .catch((err) => callback(err));
+  //if goingUP, the file we pull from is id - 1
+  //else id + 1
+}
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
 

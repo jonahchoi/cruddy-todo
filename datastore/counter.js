@@ -2,8 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
 
-var counter = 0;
-
 // Private helper functions ////////////////////////////////////////////////////
 
 // Zero padded numbers can only be represented as strings.
@@ -15,30 +13,34 @@ const zeroPaddedNumber = (num) => {
   return sprintf('%05d', num);
 };
 
-const readCounter = (callback) => {
-  fs.readFile(exports.counterFile, (err, fileData) => {
-    if (err) {
-      callback(null, 0);
-    } else {
-      callback(null, Number(fileData));
-    }
-  });
+const readCounter = () => {
+  return new Promise((res, rej) => {
+    fs.readFile(exports.counterFile, (err, fileData) => {
+      if (err) {
+        res(0);
+      } else {
+        res(Number(fileData));
+      }
+    });
+  })
 };
 
-const writeCounter = (count, callback) => {
-  var counterString = zeroPaddedNumber(count);
-  fs.writeFile(exports.counterFile, counterString, (err) => {
-    if (err) {
-      throw ('error writing counter');
-    } else {
-      callback(null, counterString);
-    }
-  });
+const writeCounter = (count) => {
+  return new Promise((res, rej) => {
+    var counterString = zeroPaddedNumber(count);
+    fs.writeFile(exports.counterFile, counterString, (err) => {
+      if (err) {
+        rej('error writing counter');
+      } else {
+        res(counterString);
+      }
+    });
+  })
 };
 
 // Public API - Fix this function //////////////////////////////////////////////
-exports.getNextUniqueId = (callback) => {
-  readCounter((err, num) => {
+exports.getNextUniqueId = () => {
+  /* readCounter((err, num) => {
     writeCounter(num + 1, (err, id)=>{
       if(err) {
         callback(err);
@@ -47,7 +49,15 @@ exports.getNextUniqueId = (callback) => {
         callback(null, id);
       }
     });
-  })
+  }) */
+  return readCounter()
+    .then((counter) => {
+      return writeCounter(counter + 1);
+    })
+    .then((count) => {
+      return count;
+    })
+    .catch((err) => console.error(err));
 };
 
 
@@ -55,3 +65,4 @@ exports.getNextUniqueId = (callback) => {
 // Configuration -- DO NOT MODIFY //////////////////////////////////////////////
 
 exports.counterFile = path.join(__dirname, 'counter.txt');
+exports.zeroPaddedNumber = zeroPaddedNumber;
