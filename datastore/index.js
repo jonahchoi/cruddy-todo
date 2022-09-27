@@ -7,13 +7,11 @@ var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
-exports.create = async (text, callback) => {
-  // var id = await counter.getNextUniqueId();
-  var id;
-  counter.getNextUniqueId((err, idHolder) => {
-    id = idHolder;
-    console.log(`${exports.dataDir}/${id}`);
-    fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
+exports.create = (text, callback) => {
+
+  counter.getNextUniqueId((err, id) => {
+
+    fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
       if(err) {
         callback(err);
       } else {
@@ -21,8 +19,6 @@ exports.create = async (text, callback) => {
       }
     })
   });
-  // items[id] = text;
-
 };
 
 exports.readAll = (callback) => {
@@ -49,7 +45,7 @@ exports.readAll = (callback) => {
           if(err) {
             rej(err);
           } else {
-            let retObj = {id: `${file}`, text: `${data}`};
+            let retObj = {id: `${file}`.split('.')[0], text: `${data}`};
             res(retObj);
           }
         });
@@ -71,11 +67,11 @@ exports.readOne = (id, callback) => {
     callback(null, { id, text });
   } */
 
-  fs.readFile(`${exports.dataDir}/${id}`, (err, data) => {
+  fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
     if(err) {
       callback(err);
     } else {
-      let retObj = {id: `${id}`, text: `${data}`};
+      let retObj = {id: `${id}`.split('.')[0], text: `${data}`};
       callback(null, retObj);
     }
   });
@@ -89,11 +85,17 @@ exports.update = (id, text, callback) => {
     items[id] = text;
     callback(null, { id, text });
   } */
-  fs.writeFile(`${exports.dataDir}/${id}`, text, (err) => {
+  fs.readFile(`${exports.dataDir}/${id}.txt`, (err, innerText) => {
     if(err) {
       callback(err);
     } else {
-      callback(null, { id, text });
+      fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
+        if(err) {
+          callback(err);
+        } else {
+          callback(null, { id, text });
+        }
+      })
     }
   })
 };
@@ -107,7 +109,7 @@ exports.delete = (id, callback) => {
   } else {
     callback();
   } */
-  fs.unlink(`${exports.dataDir}/${id}`, (err) => {
+  fs.unlink(`${exports.dataDir}/${id}.txt`, (err) => {
     if (err) {
       callback(err);
     } else {
